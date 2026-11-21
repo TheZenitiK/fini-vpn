@@ -27,6 +27,7 @@
 ### Ключевые особенности
 * **Гибкая маршрутизация** — настройка прокси-серверов на основе пользовательских правил.
 * **Современный дизайн** — интерфейс с поддержкой Material You и динамических цветовых акцентов.
+* **Автоматизация** — гибкие сценарии работы приложения: отключение VPN при блокировке экрана и автоматическое включение при разблокировке, пресеты проверки доступности интернета для выбора нужного сервиса и множество других полезных сценариев.
 
 | Поддерживаемые протоколы |
 | :--- |
@@ -54,6 +55,7 @@ The app guarantees complete privacy for your network activity and **collects zer
 ### Key Features
 * **Flexible Routing** — configure proxy servers using custom rule-based routing.
 * **Modern Design** — sleek interface with full Material You support and dynamic color accents.
+* **Automation** — flexible app scenarios: automatically disabling VPN when the screen locks and enabling it upon unlock, internet connectivity check presets to pick the right service, and many other smart features.
 
 | Supported Protocols |
 | :--- |
