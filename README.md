@@ -46,6 +46,10 @@
 ---
 
 <a name="en"></a>
+<details>
+<summary><strong>English</strong></summary>
+
+<br>
 
 > **FINI** is an open-source mobile application for proxy management powered by the **Xray** core. It combines a clean, intuitive interface with advanced networking capabilities.
 
@@ -70,3 +74,5 @@ The app guarantees complete privacy for your network activity and **collects zer
 | :--- |
 | **Android:** 10 or later |
 | **Architecture:** ARM64 |
+
+</details>
