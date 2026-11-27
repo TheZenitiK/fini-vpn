@@ -5,6 +5,15 @@
 # FINI
 
 <p>
+  <a href="https://github.com/TheZenitiK/fini-vpn/releases/latest">
+    <img src="https://img.shields.io/badge/Скачать-111111?style=for-the-badge&logo=android&logoColor=white" alt="Скачать">
+  </a>
+</p>
+
+<p>
+  <a href="https://thezenitik.github.io/fini-vpn/">
+    <img src="https://img.shields.io/badge/Сайт-27272A?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Сайт">
+  </a>
   <a href="#ru">
     <img src="https://img.shields.io/badge/Русский-18181B?style=for-the-badge" alt="Русский">
   </a>
@@ -28,6 +37,7 @@
 * **Гибкая маршрутизация** — настройка прокси-серверов на основе пользовательских правил.
 * **Современный дизайн** — интерфейс с поддержкой Material You и динамических цветовых акцентов.
 * **Автоматизация** — гибкие сценарии работы приложения: отключение VPN при блокировке экрана и автоматическое включение при разблокировке, пресеты проверки доступности интернета для выбора нужного сервиса и множество других полезных сценариев.
+* **Поддержка IPv6 и фрагментация DPI** — полноценная работа с IPv6, встроенная фрагментация трафика для обхода DPI и удобные решения для стабильной работы в России, в том числе в условиях белых списков.
 
 | Поддерживаемые протоколы |
 | :--- |
@@ -42,6 +52,22 @@
 | :--- |
 | **Android:** 10 и выше |
 | **Архитектура:** ARM64 |
+
+<details>
+<summary><strong>Скриншоты</strong></summary>
+
+<br>
+
+<p>
+  <a href="https://github.com/user-attachments/assets/1bafd6f8-f617-49f7-9611-a376b0be9f34">
+    <img src="https://github.com/user-attachments/assets/1bafd6f8-f617-49f7-9611-a376b0be9f34" width="240" alt="IMG_344">
+  </a>
+  <a href="https://github.com/user-attachments/assets/82abc205-8305-462f-a69a-af960ba4ed1c">
+    <img src="https://github.com/user-attachments/assets/82abc205-8305-462f-a69a-af960ba4ed1c" width="240" alt="IMG_345">
+  </a>
+</p>
+
+</details>
 
 ---
 
@@ -60,6 +86,7 @@ The app guarantees complete privacy for your network activity and **collects zer
 * **Flexible Routing** — configure proxy servers using custom rule-based routing.
 * **Modern Design** — sleek interface with full Material You support and dynamic color accents.
 * **Automation** — flexible app scenarios: automatically disabling VPN when the screen locks and enabling it upon unlock, internet connectivity check presets to pick the right service, and many other smart features.
+* **IPv6 Support & DPI Fragmentation** — full IPv6 support, built-in traffic fragmentation for DPI circumvention, and convenient adjustments for reliable operation in Russia, including whitelisted network conditions.
 
 | Supported Protocols |
 | :--- |
@@ -74,5 +101,21 @@ The app guarantees complete privacy for your network activity and **collects zer
 | :--- |
 | **Android:** 10 or later |
 | **Architecture:** ARM64 |
+
+<details>
+<summary><strong>Screenshots</strong></summary>
+
+<br>
+
+<p>
+  <a href="https://github.com/user-attachments/assets/1bafd6f8-f617-49f7-9611-a376b0be9f34">
+    <img src="https://github.com/user-attachments/assets/1bafd6f8-f617-49f7-9611-a376b0be9f34" width="240" alt="IMG_344">
+  </a>
+  <a href="https://github.com/user-attachments/assets/82abc205-8305-462f-a69a-af960ba4ed1c">
+    <img src="https://github.com/user-attachments/assets/82abc205-8305-462f-a69a-af960ba4ed1c" width="240" alt="IMG_345">
+  </a>
+</p>
+
+</details>
 
 </details>
