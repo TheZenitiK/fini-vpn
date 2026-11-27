@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>FINI — Open-Source Xray Client</title>
+  <meta name="description" content="FINI — мобильный VPN-клиент с открытым исходным кодом на базе ядра Xray от TheZenitiK.">
+  <style>
+    :root {
+      --bg-primary: #F4F6FA;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: #EEF2F6;
+      --text-primary: #0B0F19;
+      --text-secondary: #475569;
+      --text-muted: #64748B;
+      --border-color: #E2E8F0;
+      --accent: #0B0F19;
+      --accent-text: #FFFFFF;
+      --accent-subtle: rgba(11, 15, 25, 0.06);
+      --header-bg: rgba(244, 246, 250, 0.86);
+      --shadow-sm: 0 2px 8px rgba(11, 15, 25, 0.04);
+      --shadow-md: 0 8px 24px rgba(11, 15, 25, 0.08);
+      --drawer-overlay: rgba(11, 15, 25, 0.5);
+      --radius-xl: 20px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg-primary: #07090E;
+        --bg-secondary: #10141E;
+        --bg-tertiary: #171D2B;
+        --text-primary: #F8FAFC;
+        --text-secondary: #94A3B8;
+        --text-muted: #64748B;
+        --border-color: #1E2638;
+        --accent: #FFFFFF;
+        --accent-text: #07090E;
+        --accent-subtle: rgba(255, 255, 255, 0.08);
+        --header-bg: rgba(7, 9, 14, 0.86);
+        --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+        --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.5);
+        --drawer-overlay: rgba(0, 0, 0, 0.72);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg-primary: #07090E;
+      --bg-secondary: #10141E;
+      --bg-tertiary: #171D2B;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --border-color: #1E2638;
+      --accent: #FFFFFF;
+      --accent-text: #07090E;
+      --accent-subtle: rgba(255, 255, 255, 0.08);
+      --header-bg: rgba(7, 9, 14, 0.86);
+      --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.5);
+      --drawer-overlay: rgba(0, 0, 0, 0.72);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    img {
+      -webkit-user-drag: none;
+      user-drag: none;
+      pointer-events: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      font-size: 15px;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      overflow-x: hidden;
+    }
+
+    /* Fixed Top Header */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 62px;
+      background: var(--header-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-color);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+    }
+
+    .topbar-inner {
+      width: 100%;
+      max-width: 840px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .menu-btn:hover, .menu-btn:active {
+      background-color: var(--accent-subtle);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #0B0D14;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .brand-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .brand-name {
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-pill {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      height: 36px;
+      padding: 0 11px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s, border-color 0.2s, background-color 0.2s;
+    }
+
+    .icon-pill.theme-only {
+      width: 36px;
+      padding: 0;
+    }
+
+    .icon-pill:active {
+      transform: scale(0.95);
+    }
+
+    .icon-pill:hover {
+      border-color: var(--text-muted);
+    }
+
+    /* Left Slide-out Drawer */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--drawer-overlay);
+      z-index: 200;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .drawer-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 290px;
+      max-width: 84vw;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      z-index: 201;
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 14px;
+    }
+
+    .drawer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .drawer-brand span {
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+    }
+
+    .close-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .nav-divider {
+      margin: 12px 0 6px;
+      padding: 0 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .nav-item {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item svg {
+      flex-shrink: 0;
+    }
+
+    .nav-item:hover {
+      background: var(--accent-subtle);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--accent);
+      color: var(--accent-text);
+      font-weight: 600;
+    }
+
+    .drawer-footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 14px;
+      margin-top: 16px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .drawer-footer a {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Main Container */
+    main {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 82px 16px 48px;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 0.24s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hero Section */
+    .hero {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 30px 20px 26px;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-logo {
+      width: 90px;
+      height: 90px;
+      border-radius: 24px;
+      margin: 0 auto 16px;
+      overflow: hidden;
+      background: #0B0D14;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
+    }
+
+    .hero-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hero h1 {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      margin-bottom: 6px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      color: var(--text-secondary);
+      max-width: 580px;
+      margin: 0 auto 24px;
+      font-size: 15px;
+    }
+
+    /* Download & Action Buttons */
+    .hero-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    .btn-download {
+      width: 100%;
+      background: var(--accent);
+      color: var(--accent-text);
+      border: 1px solid var(--accent);
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.12s, opacity 0.2s;
+    }
+
+    .btn-download:active {
+      transform: scale(0.98);
+    }
+
+    .apk-version-tag {
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(128, 128, 128, 0.22);
+    }
+
+    .secondary-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 11px 12px;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      transition: transform 0.12s, border-color 0.2s, background-color 0.2s;
+    }
+
+    .btn:hover {
+      border-color: var(--text-muted);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .compact-screens-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .compact-screens-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14.5px;
+      font-weight: 600;
+    }
+
+    .compact-screens-btn {
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .compact-screens-btn:hover {
+      border-color: var(--text-muted);
+    }
+
+    .compact-screens-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Fullscreen Screenshot Lightbox Modal */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 12, 0.94);
+      backdrop-filter: blur(10px);
+      z-index: 300;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .lightbox.open {
+      display: flex;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .lightbox-top {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #FFFFFF;
+      z-index: 302;
+    }
+
+    .lightbox-counter {
+      font-size: 14px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 5px 12px;
+      border-radius: 20px;
+    }
+
+    .lightbox-close {
+      background: rgba(255, 255, 255, 0.14);
+      border: none;
+      color: #FFFFFF;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .lightbox-stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .lightbox-img-wrap {
+      max-height: 80vh;
+      max-width: 78vw;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+
+    .lightbox-img-wrap img {
+      max-height: 80vh;
+      max-width: 78vw;
+      width: auto;
+      height: auto;
+      display: block;
+    }
+
+    .arrow-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #FFFFFF;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.14s, background-color 0.2s;
+    }
+
+    .arrow-btn:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .arrow-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Cards & Grid */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .feature-list li {
+      color: var(--text-secondary);
+      font-size: 14.5px;
+    }
+
+    .feature-list strong {
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 640px) {
+      .grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .protocol-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12.5px;
+      padding: 6px 11px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+
+    .req-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .req-table td {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    .req-table tr:last-child td {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .req-table td:first-child {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .req-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Legal & FAQ Pages */
+    .doc-header {
+      margin-bottom: 18px;
+      padding: 22px 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .doc-header-text {
+      flex: 1 1 220px;
+    }
+
+    .doc-header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .doc-date {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Animated Copy All Button */
+    .copy-doc-btn {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 9px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s, border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .copy-doc-btn:hover {
+      border-color: var(--text-muted);
+    }
+
+    .copy-doc-btn:active {
+      transform: scale(0.92);
+    }
+
+    .copy-doc-btn.copied {
+      background: #16A34A;
+      border-color: #16A34A;
+      color: #FFFFFF;
+      transform: scale(1.04);
+    }
+
+    @keyframes copyPop {
+      0% { transform: scale(0.94); }
+      55% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    .copy-doc-btn.pop {
+      animation: copyPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .legal-section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin-bottom: 12px;
+    }
+
+    .legal-section h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .legal-section p {
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      margin-bottom: 8px;
+    }
+
+    .legal-section p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* FAQ Accordion (Closed by default) */
+    .faq-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .faq-question {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 18px 20px;
+      text-align: left;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .faq-chevron {
+      flex-shrink: 0;
+      transition: transform 0.22s ease;
+      color: var(--text-muted);
+    }
+
+    .faq-item.open .faq-chevron {
+      transform: rotate(180deg);
+    }
+
+    .faq-answer {
+      display: none;
+      padding: 14px 20px 18px;
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .faq-item.open .faq-answer {
+      display: block;
+    }
+
+    .faq-answer p {
+      margin-bottom: 10px;
+    }
+
+    .faq-answer p:last-child {
+      margin-bottom: 0;
+    }
+
+    .faq-answer ul {
+      margin: 8px 0 10px 20px;
+    }
+
+    .faq-answer li {
+      margin-bottom: 6px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px 16px 34px;
+      color: var(--text-muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border-color);
+      max-width: 840px;
+      margin: 0 auto;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .footer-links a, .footer-links button {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .footer-links a:hover, .footer-links button:hover {
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
+
+  <!-- Fixed Top Bar -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-left">
+        <button class="menu-btn" id="openMenuBtn" aria-label="Меню">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div class="brand" onclick="navigateTo('home')">
+          <div class="brand-logo">
+            <img src="IMG_20261115_191745.jpg" alt="FINI Logo" draggable="false" onerror="this.style.display='none'">
+          </div>
+          <span class="brand-name">FINI</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Theme Toggle Button (Sun / Moon) -->
+        <button class="icon-pill theme-only" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Сменить тему">
+          <svg id="iconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="iconMoon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <!-- Language Toggle Button with Globe -->
+        <button class="icon-pill" onclick="toggleLanguage()" aria-label="Сменить язык">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span id="currentLangCode">RU</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Left Navigation Drawer -->
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeMenu()"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div>
+      <div class="drawer-header">
+        <div class="drawer-brand">
+          <div class="brand-logo">
+            <img src="IMG_20261115_191745.jpg" alt="FINI Logo" draggable="false" onerror="this.style.display='none'">
+          </div>
+          <span>FINI</span>
+        </div>
+        <button class="close-btn" onclick="closeMenu()" aria-label="Закрыть меню">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <nav>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item active" data-page="home" onclick="navigateTo('home')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+              <span data-i18n="nav_home">Главная страница</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item" data-page="terms" onclick="navigateTo('terms')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              <span data-i18n="nav_terms">Условия использования</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item" data-page="privacy" onclick="navigateTo('privacy')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span data-i18n="nav_privacy">Политика конфиденциальности</span>
+            </button>
+          </li>
+
+          <li class="nav-divider" data-i18n="nav_extra_group">Дополнительно</li>
+
+          <li>
+            <button class="nav-item" data-page="faq" onclick="navigateTo('faq')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span data-i18n="nav_faq">Часто задаваемые вопросы</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="drawer-footer">
+      <div>FINI Project • <a href="https://github.com/TheZenitiK" target="_blank" rel="noopener noreferrer">TheZenitiK</a></div>
+      <div>Telegram: <a href="https://t.me/finivpn" target="_blank" rel="noopener noreferrer">@finivpn</a></div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+    <!-- PAGE 1: HOME -->
+    <section id="page-home" class="page active">
+      <div class="hero">
+        <div class="hero-logo">
+          <img src="IMG_20261115_191745.jpg" alt="FINI Logo" draggable="false" onerror="this.style.display='none'">
+        </div>
+        <h1>FINI</h1>
+        <div class="hero-badge" data-i18n="hero_badge">Open-Source Xray Core Client</div>
+        <p data-i18n="hero_desc">
+          Мобильное приложение с открытым исходным кодом для управления прокси-серверами на базе ядра Xray. Сочетает в себе минималистичный, интуитивно понятный интерфейс и продвинутый сетевой функционал.
+        </p>
+
+        <div class="hero-actions">
+          <a id="latestApkBtn" href="https://github.com/TheZenitiK/fini-vpn/releases/latest" target="_blank" rel="noopener noreferrer" class="btn-download">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span data-i18n="btn_download">Скачать последнюю версию</span>
+            <span id="apkVersionBadge" class="apk-version-tag">APK</span>
+          </a>
+
+          <div class="secondary-actions">
+            <a href="https://github.com/TheZenitiK/fini-vpn" target="_blank" rel="noopener noreferrer" class="btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              <span>GitHub</span>
+            </a>
+
+            <a href="https://t.me/finivpn" target="_blank" rel="noopener noreferrer" class="btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              <span>Telegram</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compact Screenshots Trigger Bar -->
+      <div class="compact-screens-bar">
+        <div class="compact-screens-info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+          <span data-i18n="home_screens_label">Скриншоты приложения</span>
+        </div>
+        <button class="compact-screens-btn" onclick="openLightbox(0)" data-i18n="btn_screenshots">Скриншоты</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom: 10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span data-i18n="home_priv_title">Конфиденциальность</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 14.5px;" data-i18n="home_priv_text">
+          Приложение гарантирует полную приватность вашей сетевой активности и не собирает никаких аналитических данных. Вся информация о подключениях остаётся исключительно на устройстве и передаётся только на выбранный вами сервер.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom: 12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          <span data-i18n="home_feat_title">Ключевые особенности</span>
+        </div>
+        <ul class="feature-list">
+          <li>
+            <strong data-i18n="feat_1_t">Гибкая маршрутизация</strong>
+            <span data-i18n="feat_1_d">Настройка прокси-серверов на основе пользовательских правил раздельного туннелирования.</span>
+          </li>
+          <li>
+            <strong data-i18n="feat_2_t">Современный дизайн</strong>
+            <span data-i18n="feat_2_d">Минималистичный интерфейс с поддержкой Material You и динамических цветовых акцентов.</span>
+          </li>
+          <li>
+            <strong data-i18n="feat_3_t">Автоматизация</strong>
+            <span data-i18n="feat_3_d">Гибкие сценарии работы: отключение VPN при блокировке экрана и включение при разблокировке, пресеты проверки доступности сети и другие полезные инструменты.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" style="margin-bottom: 12px;" data-i18n="home_proto_title">Поддерживаемые протоколы</div>
+          <div class="protocol-tags">
+            <span class="tag">VLESS (Reality)</span>
+            <span class="tag">VMess</span>
+            <span class="tag">Trojan</span>
+            <span class="tag">Shadowsocks</span>
+            <span class="tag">Socks</span>
+            <span class="tag">Hysteria 2</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" style="margin-bottom: 8px;" data-i18n="home_sys_title">Системные требования</div>
+          <table class="req-table">
+            <tr>
+              <td data-i18n="sys_os_label">Операционная система</td>
+              <td data-i18n="sys_os_val">Android 10 и выше</td>
+            </tr>
+            <tr>
+              <td data-i18n="sys_arch_label">Архитектура</td>
+              <td>ARM64 (64-bit)</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 2: TERMS OF SERVICE -->
+    <section id="page-terms" class="page">
+      <div class="doc-header">
+        <div class="doc-header-text">
+          <h1 data-i18n="terms_title">Условия предоставления услуг</h1>
+          <div class="doc-date" data-i18n="terms_updated">Последнее обновление: 27.11.2026</div>
+        </div>
+        <button class="copy-doc-btn" id="copyTermsBtn" onclick="copyDocument('terms', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span class="copy-label" data-i18n="btn_copy">Копировать</span>
+        </button>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_1_h">1. Согласие с условиями</h2>
+        <p data-i18n="t_1_p">Настоящие Условия предоставления услуг регулируют порядок использования мобильного приложения FINI. Загружая, устанавливая или используя приложение, вы подтверждаете, что ознакомились с настоящими Условиями, понимаете их и безоговорочно соглашаетесь соблюдать их. Если вы не согласны с каким-либо положением, пожалуйста, прекратите использование и удалите приложение с вашего устройства.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_2_h">2. Лицензия и порядок использования</h2>
+        <p data-i18n="t_2_p">Приложение FINI предоставляется без ограничений по сфере применения. Вы вправе свободно использовать программное обеспечение как в личных, так и в коммерческих целях при условии строгого соблюдения законодательства вашей юрисдикции. Вы несёте единоличную ответственность за законность своих действий в сети и конфигурацию подключаемых серверов.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_3_h">3. Открытый исходный код и защита бренда FINI</h2>
+        <p data-i18n="t_3_p1">Исходный код приложения является открытым. Вы имеете право изучать код и создавать собственные модификации (форки) в соответствии с условиями открытой лицензии репозитория.</p>
+        <p data-i18n="t_3_p2">При этом наименование «FINI», логотип и элементы фирменного стиля защищены от недобросовестного использования. Запрещается выдавать сторонние сборки или форки за официальное приложение FINI, вводить пользователей в заблуждение путём копирования названия, описания, домена или визуального оформления, а также заявлять о своей аффилированности с разработчиками оригинала. При публикации форка вы обязаны изменить название и логотип проекта и явно указать, что программное обеспечение является производной версией (форком). Любое использование оригинального названия и бренда требует предварительного письменного разрешения правообладателя.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_4_h">4. Бесплатное распространение и отсутствие монетизации</h2>
+        <p data-i18n="t_4_p">Приложение FINI распространяется полностью бесплатно. В приложении отсутствуют встроенные покупки, платные подписки, скрытые платежи, платный функционал и рекламные интеграции. Весь функционал клиента доступен каждому пользователю в полном объёме без каких-либо финансовых условий.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_5_h">5. Политика возврата средств</h2>
+        <p data-i18n="t_5_p">Поскольку приложение FINI предоставляется на безвозмездной основе, не осуществляет приём платежей и не содержит платных услуг или подписок, политика возврата денежных средств к данному программному обеспечению не применяется.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_6_h">6. Конфиденциальность и отказ от сбора данных</h2>
+        <p data-i18n="t_6_p">Приложение не осуществляет сбор персональной информации, телеметрии, отчётов о сбоях или аналитических данных. Подробные сведения об обработке технических идентификаторов при подключении к пользовательским серверам изложены в нашей Политике конфиденциальности.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_7_h">7. Отказ от гарантий и ограничение ответственности</h2>
+        <p data-i18n="t_7_p">Приложение предоставляется на условиях «КАК ЕСТЬ» (AS IS) и «ПО МЕРЕ ДОСТУПНОСТИ» без каких-либо прямых или подразумеваемых гарантий бесперебойной работы или пригодности для конкретных целей. В максимально допустимой применимым законодательством степени разработчики и владельцы проекта отказываются от любой ответственности за прямые или косвенные убытки, упущенную выгоду, потерю данных или иные последствия, возникшие в результате использования или невозможности использования приложения. Разработчики не контролируют пользовательские серверы и не несут ответственности за действия пользователей.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_8_h">8. Изменение настоящих Условий</h2>
+        <p data-i18n="t_8_p">Мы оставляем за собой право вносить изменения и дополнения в настоящие Условия предоставления услуг в любое время по собственному усмотрению. Новая редакция вступает в силу с момента её публикации на данной странице. Рекомендуем периодически проверять этот раздел для ознакомления с актуальной версией документа.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="t_9_h">9. Контактная информация</h2>
+        <p data-i18n="t_9_p">Если у вас возникли вопросы, предложения или замечания относительно настоящих Условий предоставления услуг, пожалуйста, свяжитесь с автором проекта (TheZenitiK) через официальный Telegram-канал @finivpn или раздел Issues в репозитории на GitHub.</p>
+      </div>
+    </section>
+
+    <!-- PAGE 3: PRIVACY POLICY -->
+    <section id="page-privacy" class="page">
+      <div class="doc-header">
+        <div class="doc-header-text">
+          <h1 data-i18n="priv_title">Политика конфиденциальности</h1>
+          <div class="doc-date" data-i18n="priv_updated">Последнее обновление: 27.11.2026</div>
+        </div>
+        <button class="copy-doc-btn" id="copyPrivacyBtn" onclick="copyDocument('privacy', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span class="copy-label" data-i18n="btn_copy">Копировать</span>
+        </button>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="p_1_h">1. Общие положения</h2>
+        <p data-i18n="p_1_p">Программное обеспечение FINI предоставляется для использования в том виде, в котором оно есть. Настоящая Политика конфиденциальности призвана проинформировать пользователей о наших принципах в отношении сбора, использования и раскрытия информации. Используя приложение FINI, вы соглашаетесь с положениями, описанными в данном документе.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="p_2_h">2. Децентрализованная архитектура и данные VPN</h2>
+        <p data-i18n="p_2_p1">Мы не собираем, не перехватываем, не храним и не модифицируем содержимое вашего сетевого трафика (данные VPN), а также не передаём никакую информацию третьим лицам.</p>
+        <p data-i18n="p_2_p2">FINI представляет собой децентрализованный клиентский инструмент, а не централизованный VPN-сервис. Приложение не предоставляет собственных серверов и не осуществляет централизованного управления соединениями. Вы самостоятельно подключаетесь к собственным или выбранным вами сторонним серверам, к которым разработчики FINI не имеют никакого отношения. Приложение лишь маршрутизирует трафик устройства на указанный вами сервер, поэтому вы сохраняете полный контроль и несёте полную ответственность за обработку данных на стороне выбранного сервера.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="p_3_h">3. Сбор данных и технические идентификаторы (HWID)</h2>
+        <p data-i18n="p_3_p1">Приложение FINI не собирает персональные данные, статистику использования или аналитику на серверы разработчиков.</p>
+        <p data-i18n="p_3_p2">Единственным техническим параметром является аппаратный идентификатор устройства (HWID) на платформе Android, который формируется и хранится локально на вашем устройстве и никогда не отправляется на серверы разработчиков FINI. По умолчанию при запросе данных о подписке (например, для обновления списка серверов) приложение передаёт HWID и модель устройства в HTTP-заголовках напрямую на ваш собственный сервер подписки. Это используется исключительно как технический идентификатор для корректной работы функции подписки и управления подключениями на стороне вашего сервера. Вы можете в любой момент отключить передачу HWID в настройках приложения — после отключения идентификатор полностью перестанет отправляться в запросах.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="p_4_h">4. Рекламные сети и монетизация</h2>
+        <p data-i18n="p_4_p">В приложении FINI отсутствуют рекламные SDK, трекеры, аналитические модули и какие-либо инструменты монетизации. Мы не планируем внедрять рекламу или сбор пользовательских данных в будущих обновлениях.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="p_5_h">5. Возрастные ограничения и конфиденциальность детей</h2>
+        <p data-i18n="p_5_p">Поскольку приложение не запрашивает и не собирает никакой личной информации, позволяющей идентифицировать пользователя, технически невозможно определить возраст пользователя или отличить несовершеннолетнего от взрослого. Мы целенаправленно не собираем никакие персональные данные о детях младше 14 лет (или иного возраста, установленного местным законодательством).</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="p_6_h">6. Ссылки на внешние ресурсы</h2>
+        <p data-i18n="p_6_p">Приложение и данный веб-сайт содержат ссылки только на официальные ресурсы проекта FINI, включая репозиторий на GitHub (github.com/TheZenitiK/fini-vpn), официальный Telegram-канал (@finivpn) и веб-страницы с правовой документацией. Мы не контролируем и не несём ответственности за содержание, политику конфиденциальности или практику обработки данных любых сторонних веб-сайтов, серверов и сервисов, на которые вы переходите самостоятельно.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2 data-i18n="p_7_h">7. Изменения в Политике конфиденциальности</h2>
+        <p data-i18n="p_7_p">Мы можем периодически обновлять настоящую Политику конфиденциальности. Рекомендуем регулярно просматривать эту страницу на предмет изменений. Все обновления вступают в силу немедленно с момента их публикации на данной странице.</p>
+      </div>
+    </section>
+
+    <!-- PAGE 4: FAQ (All closed by default) -->
+    <section id="page-faq" class="page">
+      <div class="doc-header">
+        <div class="doc-header-text">
+          <h1 data-i18n="faq_title">Часто задаваемые вопросы</h1>
+          <div class="doc-date" data-i18n="faq_subtitle">Справочная информация по работе с приложением FINI</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          <span data-i18n="faq_1_q">1. Системные требования, архитектура и технологии</span>
+          <svg class="faq-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <p data-i18n="faq_1_p1">Во избежание недоразумений относительно различий в системных требованиях важно понимать внутреннюю архитектуру приложения.</p>
+          <p data-i18n="faq_1_p2">Мобильная версия FINI для Android разработана с использованием нативного языка программирования Kotlin. Это обеспечивает максимальную системную интеграцию, минимальное энергопотребление и высокую производительность сетевого ядра Xray.</p>
+          <p data-i18n="faq_1_p3">Минимальные системные требования: операционная система Android 10 и выше, а также исключительно 64-битная архитектура процессора (ARM64 / aarch64).</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          <span data-i18n="faq_2_q">2. Как купить или получить сервер для подключения?</span>
+          <svg class="faq-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <p data-i18n="faq_2_p1">Наше приложение — это исключительно клиентский инструмент с открытым исходным кодом для подключения к прокси-серверам по различным сетевым протоколам.</p>
+          <p data-i18n="faq_2_p2">Мы ни в коем случае не продаём и не предоставляем доступ к VPN-серверам. Вы можете развернуть собственный сервер на базе Xray или использовать конфигурации сторонних провайдеров. Используйте приложение только в личных законных целях в соответствии с законодательством вашей страны.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          <span data-i18n="faq_3_q">3. Добавление конфигурации и поддерживаемые форматы</span>
+          <svg class="faq-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <p data-i18n="faq_3_p1">В настоящее время приложение поддерживает импорт и работу со следующими протоколами: VLESS (включая Reality), VMess, Trojan, Shadowsocks, Socks и Hysteria 2.</p>
+          <p data-i18n="faq_3_p2">Добавить серверы или подписку в FINI можно любым удобным способом:</p>
+          <ul>
+            <li data-i18n="faq_3_l1">По ссылке (импорт подписки или отдельного ключа из буфера обмена);</li>
+            <li data-i18n="faq_3_l2">Путем сканирования QR-кода камерой или из изображения в галерее;</li>
+            <li data-i18n="faq_3_l3">Из локального файла на вашем телефоне — поддерживаются форматы .txt, .json, .conf и .yaml.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          <span data-i18n="faq_4_q">4. Как поделиться сервером или подпиской?</span>
+          <svg class="faq-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <p data-i18n="faq_4_p1">Для отдельного сервера: зажмите (долгое нажатие) карточку нужного сервера в списке и нажмите кнопку «Поделиться». Вы сможете сразу скопировать конфигурацию в буфер обмена или отобразить её в виде QR-кода.</p>
+          <p data-i18n="faq_4_p2">Для подписки: нажмите на значок меню (три точки) рядом с нужной подпиской и выберите пункт «Поделиться». Доступно как копирование ссылки подписки в буфер обмена, так и генерация QR-кода для быстрого переноса на другое устройство.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Fullscreen Lightbox Modal for Screenshots with Simple Arrows -->
+  <div class="lightbox" id="lightbox" onclick="closeLightboxOnBackdrop(event)">
+    <div class="lightbox-top">
+      <div class="lightbox-counter" id="lightboxCounter">1 / 2</div>
+      <button class="lightbox-close" onclick="closeLightbox()" aria-label="Закрыть">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="lightbox-stage">
+      <button class="arrow-btn" onclick="changeSlide(-1)" aria-label="Предыдущий">←</button>
+      <div class="lightbox-img-wrap" onclick="changeSlide(1)">
+        <img id="lightboxImg" src="IMG_344.jpg" alt="FINI App Screenshot" draggable="false">
+      </div>
+      <button class="arrow-btn" onclick="changeSlide(1)" aria-label="Следующий">→</button>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <button onclick="navigateTo('home')" data-i18n="nav_home">Главная страница</button>
+      <button onclick="navigateTo('terms')" data-i18n="nav_terms">Условия использования</button>
+      <button onclick="navigateTo('privacy')" data-i18n="nav_privacy">Политика конфиденциальности</button>
+      <button onclick="navigateTo('faq')" data-i18n="nav_faq">FAQ</button>
+    </div>
+    <div style="margin-bottom: 6px;">
+      <a href="https://github.com/TheZenitiK/fini-vpn" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; font-weight: 600;">GitHub (TheZenitiK)</a>
+      &nbsp;•&nbsp;
+      <a href="https://t.me/finivpn" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; font-weight: 600;">Telegram (@finivpn)</a>
+    </div>
+    <div>© 2026 FINI Project by TheZenitiK. Open-Source Xray Client.</div>
+  </footer>
+
+  <script>
+    const translations = {
+      ru: {
+        nav_home: "Главная страница",
+        nav_terms: "Условия использования",
+        nav_privacy: "Политика конфиденциальности",
+        nav_extra_group: "Дополнительно",
+        nav_faq: "Часто задаваемые вопросы",
+        hero_badge: "Open-Source Xray Core Client",
+        hero_desc: "Мобильное приложение с открытым исходным кодом для управления прокси-серверами на базе ядра Xray. Сочетает в себе минималистичный, интуитивно понятный интерфейс и продвинутый сетевой функционал.",
+        btn_download: "Скачать последнюю версию",
+        btn_screenshots: "Скриншоты",
+        btn_copy: "Копировать",
+        btn_copied: "Скопировано",
+        home_screens_label: "Скриншоты приложения",
+        home_priv_title: "Конфиденциальность",
+        home_priv_text: "Приложение гарантирует полную приватность вашей сетевой активности и не собирает никаких аналитических данных. Вся информация о подключениях остаётся исключительно на устройстве и передаётся только на выбранный вами сервер.",
+        home_feat_title: "Ключевые особенности",
+        feat_1_t: "Гибкая маршрутизация",
+        feat_1_d: "Настройка прокси-серверов на основе пользовательских правил раздельного туннелирования.",
+        feat_2_t: "Современный дизайн",
+        feat_2_d: "Минималистичный интерфейс с поддержкой Material You и динамических цветовых акцентов.",
+        feat_3_t: "Автоматизация",
+        feat_3_d: "Гибкие сценарии работы: отключение VPN при блокировке экрана и включение при разблокировке, пресеты проверки доступности сети и другие полезные инструменты.",
+        home_proto_title: "Поддерживаемые протоколы",
+        home_sys_title: "Системные требования",
+        sys_os_label: "Операционная система",
+        sys_os_val: "Android 10 и выше",
+        sys_arch_label: "Архитектура",
+
+        terms_title: "Условия предоставления услуг",
+        terms_updated: "Последнее обновление: 27.11.2026",
+        t_1_h: "1. Согласие с условиями",
+        t_1_p: "Настоящие Условия предоставления услуг регулируют порядок использования мобильного приложения FINI. Загружая, устанавливая или используя приложение, вы подтверждаете, что ознакомились с настоящими Условиями, понимаете их и безоговорочно соглашаетесь соблюдать их. Если вы не согласны с каким-либо положением, пожалуйста, прекратите использование и удалите приложение с вашего устройства.",
+        t_2_h: "2. Лицензия и порядок использования",
+        t_2_p: "Приложение FINI предоставляется без ограничений по сфере применения. Вы вправе свободно использовать программное обеспечение как в личных, так и в коммерческих целях при условии строгого соблюдения законодательства вашей юрисдикции. Вы несёте единоличную ответственность за законность своих действий в сети и конфигурацию подключаемых серверов.",
+        t_3_h: "3. Открытый исходный код и защита бренда FINI",
+        t_3_p1: "Исходный код приложения является открытым. Вы имеете право изучать код и создавать собственные модификации (форки) в соответствии с условиями открытой лицензии репозитория.",
+        t_3_p2: "При этом наименование «FINI», логотип и элементы фирменного стиля защищены от недобросовестного использования. Запрещается выдавать сторонние сборки или форки за официальное приложение FINI, вводить пользователей в заблуждение путём копирования названия, описания, домена или визуального оформления, а также заявлять о своей аффилированности с разработчиками оригинала. При публикации форка вы обязаны изменить название и логотип проекта и явно указать, что программное обеспечение является производной версией (форком). Любое использование оригинального названия и бренда требует предварительного письменного разрешения правообладателя.",
+        t_4_h: "4. Бесплатное распространение и отсутствие монетизации",
+        t_4_p: "Приложение FINI распространяется полностью бесплатно. В приложении отсутствуют встроенные покупки, платные подписки, скрытые платежи, платный функционал и рекламные интеграции. Весь функционал клиента доступен каждому пользователю в полном объёме без каких-либо финансовых условий.",
+        t_5_h: "5. Политика возврата средств",
+        t_5_p: "Поскольку приложение FINI предоставляется на безвозмездной основе, не осуществляет приём платежей и не содержит платных услуг или подписок, политика возврата денежных средств к данному программному обеспечению не применяется.",
+        t_6_h: "6. Конфиденциальность и отказ от сбора данных",
+        t_6_p: "Приложение не осуществляет сбор персональной информации, телеметрии, отчётов о сбоях или аналитических данных. Подробные сведения об обработке технических идентификаторов при подключении к пользовательским серверам изложены в нашей Политике конфиденциальности.",
+        t_7_h: "7. Отказ от гарантий и ограничение ответственности",
+        t_7_p: "Приложение предоставляется на условиях «КАК ЕСТЬ» (AS IS) и «ПО МЕРЕ ДОСТУПНОСТИ» без каких-либо прямых или подразумеваемых гарантий бесперебойной работы или пригодности для конкретных целей. В максимально допустимой применимым законодательством степени разработчики и владельцы проекта отказываются от любой ответственности за прямые или косвенные убытки, упущенную выгоду, потерю данных или иные последствия, возникшие в результате использования или невозможности использования приложения. Разработчики не контролируют пользовательские серверы и не несут ответственности за действия пользователей.",
+        t_8_h: "8. Изменение настоящих Условий",
+        t_8_p: "Мы оставляем за собой право вносить изменения и дополнения в настоящие Условия предоставления услуг в любое время по собственному усмотрению. Новая редакция вступает в силу с момента её публикации на данной странице. Рекомендуем периодически проверять этот раздел для ознакомления с актуальной версией документа.",
+        t_9_h: "9. Контактная информация",
+        t_9_p: "Если у вас возникли вопросы, предложения или замечания относительно настоящих Условий предоставления услуг, пожалуйста, свяжитесь с автором проекта (TheZenitiK) через официальный Telegram-канал @finivpn или раздел Issues в репозитории на GitHub.",
+
+        priv_title: "Политика конфиденциальности",
+        priv_updated: "Последнее обновление: 27.11.2026",
+        p_1_h: "1. Общие положения",
+        p_1_p: "Программное обеспечение FINI предоставляется для использования в том виде, в котором оно есть. Настоящая Политика конфиденциальности призвана проинформировать пользователей о наших принципах в отношении сбора, использования и раскрытия информации. Используя приложение FINI, вы соглашаетесь с положениями, описанными в данном документе.",
+        p_2_h: "2. Децентрализованная архитектура и данные VPN",
+        p_2_p1: "Мы не собираем, не перехватываем, не храним и не модифицируем содержимое вашего сетевого трафика (данные VPN), а также не передаём никакую информацию третьим лицам.",
+        p_2_p2: "FINI представляет собой децентрализованный клиентский инструмент, а не централизованный VPN-сервис. Приложение не предоставляет собственных серверов и не осуществляет централизованного управления соединениями. Вы самостоятельно подключаетесь к собственным или выбранным вами сторонним серверам, к которым разработчики FINI не имеют никакого отношения. Приложение лишь маршрутизирует трафик устройства на указанный вами сервер, поэтому вы сохраняете полный контроль и несёте полную ответственность за обработку данных на стороне выбранного сервера.",
+        p_3_h: "3. Сбор данных и технические идентификаторы (HWID)",
+        p_3_p1: "Приложение FINI не собирает персональные данные, статистику использования или аналитику на серверы разработчиков.",
+        p_3_p2: "Единственным техническим параметром является аппаратный идентификатор устройства (HWID) на платформе Android, который формируется и хранится локально на вашем устройстве и никогда не отправляется на серверы разработчиков FINI. По умолчанию при запросе данных о подписке (например, для обновления списка серверов) приложение передаёт HWID и модель устройства в HTTP-заголовках напрямую на ваш собственный сервер подписки. Это используется исключительно как технический идентификатор для корректной работы функции подписки и управления подключениями на стороне вашего сервера. Вы можете в любой момент отключить передачу HWID в настройках приложения — после отключения идентификатор полностью перестанет отправляться в запросах.",
+        p_4_h: "4. Рекламные сети и монетизация",
+        p_4_p: "В приложении FINI отсутствуют рекламные SDK, трекеры, аналитические модули и какие-либо инструменты монетизации. Мы не планируем внедрять рекламу или сбор пользовательских данных в будущих обновлениях.",
+        p_5_h: "5. Возрастные ограничения и конфиденциальность детей",
+        p_5_p: "Поскольку приложение не запрашивает и не собирает никакой личной информации, позволяющей идентифицировать пользователя, технически невозможно определить возраст пользователя или отличить несовершеннолетнего от взрослого. Мы целенаправленно не собираем никакие персональные данные о детях младше 14 лет (или иного возраста, установленного местным законодательством).",
+        p_6_h: "6. Ссылки на внешние ресурсы",
+        p_6_p: "Приложение и данный веб-сайт содержат ссылки только на официальные ресурсы проекта FINI, включая репозиторий на GitHub (github.com/TheZenitiK/fini-vpn), официальный Telegram-канал (@finivpn) и веб-страницы с правовой документацией. Мы не контролируем и не несём ответственности за содержание, политику конфиденциальности или практику обработки данных любых сторонних веб-сайтов, серверов и сервисов, на которые вы переходите самостоятельно.",
+        p_7_h: "7. Изменения в Политике конфиденциальности",
+        p_7_p: "Мы можем периодически обновлять настоящую Политику конфиденциальности. Рекомендуем регулярно просматривать эту страницу на предмет изменений. Все обновления вступают в силу немедленно с момента их публикации на данной странице.",
+
+        faq_title: "Часто задаваемые вопросы",
+        faq_subtitle: "Справочная информация по работе с приложением FINI",
+        faq_1_q: "1. Системные требования, архитектура и технологии",
+        faq_1_p1: "Во избежание недоразумений относительно различий в системных требованиях важно понимать внутреннюю архитектуру приложения.",
+        faq_1_p2: "Мобильная версия FINI для Android разработана с использованием нативного языка программирования Kotlin. Это обеспечивает максимальную системную интеграцию, минимальное энергопотребление и высокую производительность сетевого ядра Xray.",
+        faq_1_p3: "Минимальные системные требования: операционная система Android 10 и выше, а также исключительно 64-битная архитектура процессора (ARM64 / aarch64).",
+        faq_2_q: "2. Как купить или получить сервер для подключения?",
+        faq_2_p1: "Наше приложение — это исключительно клиентский инструмент с открытым исходным кодом для подключения к прокси-серверам по различным сетевым протоколам.",
+        faq_2_p2: "Мы ни в коем случае не продаём и не предоставляем доступ к VPN-серверам. Вы можете развернуть собственный сервер на базе Xray или использовать конфигурации сторонних провайдеров. Используйте приложение только в личных законных целях в соответствии с законодательством вашей страны.",
+        faq_3_q: "3. Добавление конфигурации и поддерживаемые форматы",
+        faq_3_p1: "В настоящее время приложение поддерживает импорт и работу со следующими протоколами: VLESS (включая Reality), VMess, Trojan, Shadowsocks, Socks и Hysteria 2.",
+        faq_3_p2: "Добавить серверы или подписку в FINI можно любым удобным способом:",
+        faq_3_l1: "По ссылке (импорт подписки или отдельного ключа из буфера обмена);",
+        faq_3_l2: "Путем сканирования QR-кода камерой или из изображения в галерее;",
+        faq_3_l3: "Из локального файла на вашем телефоне — поддерживаются форматы .txt, .json, .conf и .yaml.",
+        faq_4_q: "4. Как поделиться сервером или подпиской?",
+        faq_4_p1: "Для отдельного сервера: зажмите (долгое нажатие) карточку нужного сервера в списке и нажмите кнопку «Поделиться». Вы сможете сразу скопировать конфигурацию в буфер обмена или отобразить её в виде QR-кода.",
+        faq_4_p2: "Для подписки: нажмите на значок меню (три точки) рядом с нужной подпиской и выберите пункт «Поделиться». Доступно как копирование ссылки подписки в буфер обмена, так и генерация QR-кода для быстрого переноса на другое устройство."
+      },
+      en: {
+        nav_home: "Home",
+        nav_terms: "Terms of Service",
+        nav_privacy: "Privacy Policy",
+        nav_extra_group: "Additional",
+        nav_faq: "FAQ",
+        hero_badge: "Open-Source Xray Core Client",
+        hero_desc: "An open-source mobile application for managing proxy servers powered by the Xray core. Combines a minimalist, intuitive interface with advanced networking capabilities.",
+        btn_download: "Download Latest Version",
+        btn_screenshots: "Screenshots",
+        btn_copy: "Copy",
+        btn_copied: "Copied",
+        home_screens_label: "App Screenshots",
+        home_priv_title: "Privacy First",
+        home_priv_text: "The application guarantees complete privacy of your network activity and collects zero analytics data. All connection configurations remain strictly on your device and are transmitted solely to the server you choose.",
+        home_feat_title: "Key Features",
+        feat_1_t: "Flexible Routing",
+        feat_1_d: "Configure proxy servers using custom split-tunneling routing rules.",
+        feat_2_t: "Modern Design",
+        feat_2_d: "Clean interface featuring Material You support and dynamic color accents.",
+        feat_3_t: "Automation",
+        feat_3_d: "Flexible automation scenarios: disconnect VPN on screen lock and auto-connect on unlock, connectivity check presets, and other useful tools.",
+        home_proto_title: "Supported Protocols",
+        home_sys_title: "System Requirements",
+        sys_os_label: "Operating System",
+        sys_os_val: "Android 10 and above",
+        sys_arch_label: "Architecture",
+
+        terms_title: "Terms of Service",
+        terms_updated: "Last updated: 27.11.2026",
+        t_1_h: "1. Acceptance of Terms",
+        t_1_p: "These Terms of Service govern your use of the FINI mobile application. By downloading, installing, or using the application, you confirm that you have read, understood, and unconditionally agree to be bound by these Terms. If you do not agree with any provision herein, please discontinue use and uninstall the application from your device.",
+        t_2_h: "2. License and Scope of Use",
+        t_2_p: "The FINI application is provided without restrictions on usage scope. You are free to use the software for both personal and commercial purposes, provided you comply with all applicable laws and regulations in your jurisdiction. You bear sole responsibility for the legality of your network activity and the configuration of connected servers.",
+        t_3_h: "3. Open-Source Code & FINI Brand Protection",
+        t_3_p1: "The source code of FINI is open-source. You are permitted to inspect the code and create modified versions (forks) in accordance with the repository's open-source license.",
+        t_3_p2: "However, the name \"FINI\", its logo, and brand identity are protected against unauthorized use. You may not pass off third-party builds or forks as the official FINI application, mislead users by imitating the name, description, domain, or visual identity, or imply endorsement by the original developers. If you distribute a fork, you must change the project name and logo and clearly state that it is a derivative fork. Any use of the original FINI name or brand requires prior written permission.",
+        t_4_h: "4. Free Distribution & Zero Monetization",
+        t_4_p: "FINI is distributed completely free of charge. The application contains no paid features, in-app purchases, subscriptions, hidden fees, or advertisements. All functionality is available to every user in full without financial obligations.",
+        t_5_h: "5. Refund Policy",
+        t_5_p: "Because FINI is provided free of charge, processes no payments, and offers no paid features or subscriptions, no refund policy applies to this software.",
+        t_6_h: "6. Privacy and No Data Collection",
+        t_6_p: "The application does not collect personal information, telemetry, crash reports, or analytics data. Detailed information regarding technical identifiers used when connecting to user-configured servers is available in our Privacy Policy.",
+        t_7_h: "7. Disclaimer of Warranties & Limitation of Liability",
+        t_7_p: "The application is provided on an \"AS IS\" and \"AS AVAILABLE\" basis without warranties of any kind, either express or implied. To the fullest extent permitted by applicable law, the developers and project owners disclaim all liability for any direct, indirect, incidental, or consequential damages, loss of data, or other outcomes arising from the use or inability to use the application. The developers do not operate user servers and bear no responsibility for user actions.",
+        t_8_h: "8. Changes to These Terms",
+        t_8_p: "We reserve the right to update or modify these Terms of Service at any time. Any changes become effective immediately upon posting on this page. We encourage you to review this page periodically to stay informed of updates.",
+        t_9_h: "9. Contact Us",
+        t_9_p: "If you have any questions or inquiries regarding these Terms of Service, please contact the author (TheZenitiK) via the official Telegram channel @finivpn or through the Issues section of our GitHub repository.",
+
+        priv_title: "Privacy Policy",
+        priv_updated: "Last updated: 27.11.2026",
+        p_1_h: "1. Overview",
+        p_1_p: "The FINI software is provided for use as is. This Privacy Policy informs visitors and users of our policies regarding the collection, use, and disclosure of information. By choosing to use FINI, you agree to the practices described in this policy.",
+        p_2_h: "2. Decentralized Architecture & VPN Data",
+        p_2_p1: "We do not collect, intercept, store, or alter the contents of your VPN network traffic, nor do we share any confidential data with third parties.",
+        p_2_p2: "FINI is a decentralized client application, not a centralized VPN service. We do not operate VPN servers or provide centralized connection management. You connect to your own or third-party servers chosen by you, with which we have no affiliation. The application simply routes device traffic to your designated server; therefore, you retain full control over and responsibility for your VPN data.",
+        p_3_h: "3. Data Collection & Hardware Identifier (HWID)",
+        p_3_p1: "FINI does not collect personal data, usage statistics, or analytics to developer-controlled servers.",
+        p_3_p2: "Regarding technical identifiers, the Android application generates and stores a Hardware ID (HWID) locally on your device without transmitting it to any third-party or developer servers. By default, when requesting subscription data (such as fetching a server list), the app sends your HWID and device model in HTTP headers directly to your configured subscription server. This serves solely as a user identifier to support subscription management on your server. You can disable HWID transmission at any time in the application settings, after which it will no longer be included in requests.",
+        p_4_h: "4. Advertising Networks & Monetization",
+        p_4_p: "FINI integrates no advertising SDKs, trackers, or monetization frameworks, and we have no plans to introduce monetization or tracking in the future.",
+        p_5_h: "5. Age Rating & Children's Privacy",
+        p_5_p: "Because our application collects no personally identifiable information, it is technically impossible to determine a user's age or distinguish a minor from an adult. We do not knowingly collect any personal information from children under the age of 14.",
+        p_6_h: "6. Links to External Sites",
+        p_6_p: "Our application and website contain links only to official FINI project resources, including our GitHub repository (github.com/TheZenitiK/fini-vpn), official Telegram channel (@finivpn), and legal documentation pages. We do not control and assume no responsibility for the content, privacy policies, or practices of any third-party websites, servers, or services.",
+        p_7_h: "7. Changes to This Privacy Policy",
+        p_7_p: "We may update our Privacy Policy from time to time. You are advised to review this page periodically for any changes. All modifications take effect immediately upon being posted on this page.",
+
+        faq_title: "Frequently Asked Questions",
+        faq_subtitle: "Technical guide and usage documentation for FINI",
+        faq_1_q: "1. System Requirements, Architecture & Tech Stack",
+        faq_1_p1: "To avoid any misunderstandings regarding hardware compatibility, it is important to understand the internal architecture of the application.",
+        faq_1_p2: "The Android version of FINI is built natively using Kotlin. This ensures deep system integration, minimal battery consumption, and high throughput for the Xray networking core.",
+        faq_1_p3: "Minimum system requirements: Android 10 or higher, and strictly 64-bit processor architectures (ARM64 / aarch64).",
+        faq_2_q: "2. How do I buy or obtain a VPN server?",
+        faq_2_p1: "Our application is strictly an open-source client tool designed to connect to proxy servers over supported protocols.",
+        faq_2_p2: "We do not sell or provide access to VPN servers under any circumstances. You can deploy your own Xray server or use configurations from third-party providers. Please use the application solely for lawful personal purposes in compliance with your local laws.",
+        faq_3_q: "3. Adding Configurations & Supported Formats",
+        faq_3_p1: "FINI currently supports importing and running configurations for VLESS (including Reality), VMess, Trojan, Shadowsocks, Socks, and Hysteria 2.",
+        faq_3_p2: "You can add servers or subscriptions to FINI using any of the following methods:",
+        faq_3_l1: "Via URL (importing a subscription link or individual server URI from the clipboard);",
+        faq_3_l2: "By scanning a QR code using your camera or from an image in your gallery;",
+        faq_3_l3: "By importing a local configuration file from your phone — .txt, .json, .conf, and .yaml files are supported.",
+        faq_4_q: "4. How do I share a server or subscription?",
+        faq_4_p1: "For an individual server: press and hold (long-press) the desired server card in the list and tap \"Share\". You can immediately copy the configuration link to your clipboard or display it as a QR code.",
+        faq_4_p2: "For a subscription: tap the three-dot menu icon next to the subscription and select \"Share\". You can either copy the subscription URL to your clipboard or generate a QR code to transfer it to another device."
+      }
+    };
+
+    let currentLang = 'ru';
+    let isDarkTheme = false;
+
+    // Drawer Controls
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    const openMenuBtn = document.getElementById('openMenuBtn');
+
+    function openMenu() {
+      drawer.classList.add('open');
+      backdrop.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeMenu() {
+      drawer.classList.remove('open');
+      backdrop.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+
+    openMenuBtn.addEventListener('click', openMenu);
+
+    // Navigation
+    function navigateTo(pageId) {
+      document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+      document.getElementById('page-' + pageId).classList.add('active');
+
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === pageId);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      closeMenu();
+      history.replaceState(null, '', '#' + pageId);
+    }
+
+    // FAQ Accordion
+    function toggleFaq(btn) {
+      const item = btn.parentElement;
+      item.classList.toggle('open');
+    }
+
+    // Copy Full Legal Document with Animation
+    function copyDocument(docType, btnEl) {
+      const sectionEl = document.getElementById('page-' + docType);
+      if (!sectionEl) return;
+
+      const title = sectionEl.querySelector('.doc-header h1')?.innerText.trim() || '';
+      const updated = sectionEl.querySelector('.doc-date')?.innerText.trim() || '';
+      const parts = [title, updated].filter(Boolean);
+
+      sectionEl.querySelectorAll('.legal-section').forEach(sec => {
+        const h2 = sec.querySelector('h2')?.innerText.trim() || '';
+        const paragraphs = Array.from(sec.querySelectorAll('p')).map(p => p.innerText.trim()).filter(Boolean);
+        parts.push([h2, ...paragraphs].filter(Boolean).join('\n'));
+      });
+
+      const fullText = parts.join('\n\n');
+
+      const triggerSuccessAnimation = () => {
+        const labelEl = btnEl.querySelector('.copy-label');
+        btnEl.classList.remove('pop');
+        void btnEl.offsetWidth;
+        btnEl.classList.add('copied', 'pop');
+        if (labelEl) labelEl.textContent = translations[currentLang].btn_copied;
+
+        setTimeout(() => {
+          btnEl.classList.remove('copied', 'pop');
+          if (labelEl) labelEl.textContent = translations[currentLang].btn_copy;
+        }, 1800);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullText).then(triggerSuccessAnimation).catch(() => {
+          fallbackCopy(fullText, triggerSuccessAnimation);
+        });
+      } else {
+        fallbackCopy(fullText, triggerSuccessAnimation);
+      }
+    }
+
+    function fallbackCopy(text, cb) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        cb();
+      } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
+    // Language Switcher
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+
+      document.getElementById('currentLangCode').textContent = lang.toUpperCase();
+    }
+
+    function toggleLanguage() {
+      setLanguage(currentLang === 'ru' ? 'en' : 'ru');
+    }
+
+    // Theme Detection & Switcher (Sun / Moon)
+    function updateThemeIcons(dark) {
+      isDarkTheme = dark;
+      document.getElementById('iconSun').style.display = dark ? 'block' : 'none';
+      document.getElementById('iconMoon').style.display = dark ? 'none' : 'block';
+    }
+
+    function toggleTheme() {
+      const nextDark = !isDarkTheme;
+      document.documentElement.setAttribute('data-theme', nextDark ? 'dark' : 'light');
+      updateThemeIcons(nextDark);
+    }
+
+    // Screenshots Lightbox
+    const screenshots = ['IMG_344.jpg', 'IMG_345.jpg'];
+    let currentSlide = 0;
+
+    function openLightbox(index) {
+      currentSlide = index;
+      updateLightbox();
+      document.getElementById('lightbox').classList.add('open');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('open');
+    }
+
+    function closeLightboxOnBackdrop(e) {
+      if (e.target.id === 'lightbox') {
+        closeLightbox();
+      }
+    }
+
+    function changeSlide(step) {
+      currentSlide = (currentSlide + step + screenshots.length) % screenshots.length;
+      updateLightbox();
+    }
+
+    function updateLightbox() {
+      document.getElementById('lightboxImg').src = screenshots[currentSlide];
+      document.getElementById('lightboxCounter').textContent = `${currentSlide + 1} / ${screenshots.length}`;
+    }
+
+    // Fetch latest APK release directly from GitHub API
+    async function fetchLatestApkRelease() {
+      const btn = document.getElementById('latestApkBtn');
+      const badge = document.getElementById('apkVersionBadge');
+      try {
+        const response = await fetch('https://api.github.com/repos/TheZenitiK/fini-vpn/releases/latest');
+        if (!response.ok) return;
+        const release = await response.json();
+        if (release.tag_name) {
+          badge.textContent = release.tag_name + ' • APK';
+        }
+        if (Array.isArray(release.assets)) {
+          const apkAsset = release.assets.find(asset => asset.name && asset.name.toLowerCase().endsWith('.apk'));
+          if (apkAsset && apkAsset.browser_download_url) {
+            btn.href = apkAsset.browser_download_url;
+          }
+        }
+      } catch (e) {
+        // Fallback remains https://github.com/TheZenitiK/fini-vpn/releases/latest
+      }
+    }
+
+    // Initialize default system theme, URL hash & latest release
+    (function init() {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      updateThemeIcons(prefersDark);
+
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (!document.documentElement.hasAttribute('data-theme')) {
+          updateThemeIcons(e.matches);
+        }
+      });
+
+      const hash = window.location.hash.replace('#', '');
+      if (['home', 'terms', 'privacy', 'faq'].includes(hash)) {
+        navigateTo(hash);
+      }
+
+      fetchLatestApkRelease();
+    })();
+  </script>
+</body>
+</html>
